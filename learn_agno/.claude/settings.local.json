@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/MCP/mcp-servers/freepik-mcp/**)",
+      "Read(//d/MCP/mcp-server-typescript/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

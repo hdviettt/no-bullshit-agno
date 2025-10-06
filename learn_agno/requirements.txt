@@ -1,0 +1,3 @@
+brave-search
+PyGithub
+asyncio
