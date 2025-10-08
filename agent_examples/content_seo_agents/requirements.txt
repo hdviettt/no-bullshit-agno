@@ -1,0 +1,7 @@
+agno
+duckduckgo-search
+fastapi[standard] 
+sqlalchemy
+ddgs
+anthropic
+mcp
