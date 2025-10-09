@@ -4,13 +4,13 @@ Author: Hoang Duc Viet
 Description: AI Agentic System for SEO content creation with Agno.
 Version: 0.1.0
 Latest changes: 
-- Added sessions and memory management
+- connected to Arize Phoenix for tracing and evaluation.
 NOTES:
-- 
+- not being able to trace total token usage and costs due to agno itself.
 
 TODO: 
 - RAG
-- Evalutation
+
 '''
 
 from agno.agent import Agent
@@ -23,6 +23,15 @@ from agno.models.anthropic import Claude
 # SQLite Database
 from agno.db.sqlite import SqliteDb
 
+# RAG Chromadb Database
+# import chromadb
+# from agno.knowledge.knowledge import Knowledge
+# from agno.vectordb.chroma import ChromaDb
+# from agno.knowledge.embedder.cohere import CohereEmbedder
+# from chromadb.config import Settings
+# import chromadb.utils.embedding_functions as embedding_functions
+
+
 # Tools
 from agno.tools.duckduckgo import DuckDuckGoTools
 from agno.tools.mcp import MultiMCPTools
@@ -30,10 +39,19 @@ from agno.tools.mcp import MultiMCPTools
 # async run for MCP
 import asyncio
 
+# tracing and evaluation
+from phoenix.otel import register
+
+# Token tracking
+from token_tracker import TokenTracker
+
 # Load environment variables
 import os
 import dotenv
 dotenv.load_dotenv()
+
+# Initialize token tracker
+tracker = TokenTracker()
 
 # Declare database
 
@@ -51,6 +69,46 @@ db = SqliteDb(
     knowledge_table="knowledge",
 )
 
+# Configure RAG database with Chroma
+
+## embedding with Cohere
+# cohere_ef = embedding_functions.CohereEmbeddingFunction(
+#     api_key=os.getenv('COHERE_API_KEY'),
+#     model_name="embed-v4.0"
+#     )
+
+# client = chromadb.CloudClient(
+#   api_key = "ck-5h8C36CwzBp81NwGoNjvZkNyrzEmjQcg5kkfPZVoQ8Pu",
+#   tenant = 'de163e20-bb6f-4dc9-a7e8-51eab137d1ca',
+#   database = 'agno'
+# )
+
+# knowledge = Knowledge(
+#     name = "Story writing knowledge",
+#     description = "Guidance on how to write effective short stories",
+#     vector_db = ChromaDb(
+#         collection="sample_collection",
+#         embedder=CohereEmbedder(id="embed-v4.0", api_key="wiZKEho6gTFN97xutVtDKFp7pHIo7XDte10WXZfH"),
+#         settings = Settings(
+#             chroma_api_impl = "chromadb.api.fastapi.FastAPI",
+#             chroma_server_host = "de163e20-bb6f-4dc9-a7e8-51eab137d1ca.api.trychroma.com",
+#             chroma_server_http_port = 443,
+#             chroma_server_ssl_enabled = True,
+#             chroma_client_auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
+#             chroma_client_auth_credentials="ck-5h8C36CwzBp81NwGoNjvZkNyrzEmjQcg5kkfPZVoQ8Pu"
+#         )
+#     )
+# )
+
+# TRACING & EVALUATION
+os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = "http://localhost:6006"
+os.environ["PHOENIX_PROJECT_NAME"] = "writer"
+
+# Register Phoenix with enhanced configuration
+tracer_provider = register(
+    project_name="writer",
+    auto_instrument=True,
+)
 """
 SEO CONTENT CREATION TEAM
 
@@ -80,7 +138,7 @@ def content_team():
     outline_agent = Agent(
         name = "Outline Agent",
         role = "Create a short story outline based on a given topic",
-        model = Claude(id="claude-sonnet-4-5", api_key=os.getenv("ANTHROPIC_API_KEY")),
+        model = Claude(id="claude-sonnet-4-5-20250929", api_key=os.getenv("ANTHROPIC_API_KEY")),
         description="You are short story idea creator. You generate an idea and suggest a clear outline base on a given topic",
         instructions = [
             "When asked to write a story, only return the story and nothing else.",
@@ -92,7 +150,7 @@ def content_team():
         db = db,
         add_history_to_context=True, ## retrieve conversaion history -> memory
         read_chat_history=True, ## enables agent to read the chat history that were previously stored
-        enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
+        # enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
         num_history_runs=2,
         search_session_history=True, ## allow searching through past sessions
         # num_history_sessions=2, ## retrieve only the 2 lastest sessions of the agent
@@ -104,7 +162,7 @@ def content_team():
     content_writer = Agent(
         name = "Content Writer Agent",
         role = "Write story based on a given outline",
-        model = Claude(id="claude-sonnet-4-5", api_key=os.getenv("ANTHROPIC_API_KEY")),
+        model = Claude(id="claude-sonnet-4-5-20250929", api_key=os.getenv("ANTHROPIC_API_KEY")),
         description="You are a short storywriter. Base on a given outline, you write a short compelling story.",
         instructions=[
             "When asked to write a story, only return the story itself and nothing else.",
@@ -116,7 +174,7 @@ def content_team():
         db = db,
         add_history_to_context=True, ## retrieve conversaion history -> memory
         read_chat_history=True, ## enables agent to read the chat history that were previously stored
-        enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
+        # enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
         num_history_runs=2,
         search_session_history=True, ## allow searching through past sessions
         # num_history_sessions=2, ## retrieve only the 2 lastest sessions of the agent
@@ -128,7 +186,7 @@ def content_team():
     content_team = Team(
         name="AI SEO Content Team",
         role="Coordinate the team members",
-        model = Claude(id="claude-sonnet-4-5", api_key=os.getenv("ANTHROPIC_API_KEY")),
+        model = Claude(id="claude-sonnet-4-5-20250929", api_key=os.getenv("ANTHROPIC_API_KEY")),
         description="",
         instructions=[
             "use outline agent to generate outline",
@@ -138,10 +196,11 @@ def content_team():
         ],
         tools = [],
         db = db,
+        # knowledge = knowledge,
 
         add_history_to_context=True, ## retrieve conversaion history -> memory
         read_team_history=True,
-        enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
+        # enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
         num_history_runs=2,
         search_session_history=True, ## allow searching through past sessions
 
@@ -153,10 +212,8 @@ def content_team():
 
 
         members=[outline_agent, content_writer], 
-        reasoning=True,
-        reasoning_max_steps = 2,
-        # add_datetime_to_context=True,
-        # add_history_to_context=True,
+        # reasoning=True,
+        # reasoning_max_steps = 2,
     )
 
     agent_os = AgentOS(
@@ -173,4 +230,4 @@ os_instance = content_team()
 app = os_instance.get_app()
 
 if __name__ == "__main__":
-    os_instance.serve(app="agents:app", reload=True)
+    os_instance.serve(app="agents:app", reload=False)
