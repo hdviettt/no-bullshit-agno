@@ -4,8 +4,10 @@ Author: Hoang Duc Viet
 Description: AI Agentic System for SEO content creation with Agno.
 Version: 0.1.0
 Latest changes: 
+- Added sessions and memory management
+NOTES:
+- Team agent doesn't return output, but return reasoning.
 TODO: 
-- memory management
 - RAG
 - Evalutation
 '''
@@ -33,35 +35,8 @@ import dotenv
 dotenv.load_dotenv()
 
 # Declare database
-outline_agent_db = SqliteDb(
-    db_file="agents/outline_agent.db",
-    # Table to store your Agent, Team and Workflow sessions and runs
-    session_table="sessions",
-    # Table to store all user memories
-    memory_table="memory",
-    # Table to store all metrics aggregations
-    metrics_table="metrics",
-    # Table to store all your evaluation data
-    eval_table="evals",
-    # Table to store all your knowledge content
-    knowledge_table="knowledge",
-)
 
-writer_agent_db = SqliteDb(
-    db_file="agents/writer_agent.db",
-    # Table to store your Agent, Team and Workflow sessions and runs
-    session_table="sessions",
-    # Table to store all user memories
-    memory_table="memory",
-    # Table to store all metrics aggregations
-    metrics_table="metrics",
-    # Table to store all your evaluation data
-    eval_table="evals",
-    # Table to store all your knowledge content
-    knowledge_table="knowledge",
-)
-
-team_db = SqliteDb(
+db = SqliteDb(
     db_file="agents/content_team.db",
     # Table to store your Agent, Team and Workflow sessions and runs
     session_table="sessions",
@@ -113,7 +88,7 @@ def content_team():
         tools = [DuckDuckGoTools()],
         # reasoning=True,
         # reasoning_max_steps=10,
-        db = outline_agent_db,
+        db = db,
         add_history_to_context=True, ## retrieve conversaion history -> memory
         read_chat_history=True, ## enables agent to read the chat history that were previously stored
         enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
@@ -137,7 +112,7 @@ def content_team():
         tools = [],
         # reasoning=True,
         # reasoning_max_steps=10,
-        db = writer_agent_db,
+        db = db,
         add_history_to_context=True, ## retrieve conversaion history -> memory
         read_chat_history=True, ## enables agent to read the chat history that were previously stored
         enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
@@ -159,14 +134,14 @@ def content_team():
             "When the user asks for a story, only return the full short story after the appropriate team members have completed their job."
         ],
         tools = [],
-        db = team_db,
+        db = db,
 
         add_history_to_context=True, ## retrieve conversaion history -> memory
-        read_chat_history=True, ## enables agent to read the chat history that were previously stored
+        read_team_history=True,
         enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
         num_history_runs=2,
         search_session_history=True, ## allow searching through past sessions
-        read_team_history=True,
+
 
         # num_history_sessions=2, ## retrieve only the 2 lastest sessions of the agent
         markdown=True,
