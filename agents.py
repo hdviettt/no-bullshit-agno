@@ -38,7 +38,7 @@ dotenv.load_dotenv()
 # Declare database
 
 db = SqliteDb(
-    db_file="agents/content_team.db",
+    db_file="database.db",
     # Table to store your Agent, Team and Workflow sessions and runs
     session_table="sessions",
     # Table to store all user memories
