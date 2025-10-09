@@ -6,7 +6,7 @@ Version: 0.1.0
 Latest changes: 
 - Added sessions and memory management
 NOTES:
-- Team agent doesn't return output, but return reasoning.
+
 TODO: 
 - RAG
 - Evalutation
@@ -128,10 +128,12 @@ def content_team():
         name="AI SEO Content Team",
         role="Coordinate the team members",
         model = Claude(id="claude-sonnet-4-5", api_key=os.getenv("ANTHROPIC_API_KEY")),
-        description="You are a short story writing helper with 2 team members: outline agent and content writer. Use outline agent to come up with story outline base on topic, and use that outline to pass onto the content writer agent to produce a full short story. If the user provides the outline first-hand, the outline agent isn't needed.",
+        description="",
         instructions=[
-            "When the user asks for an outline, only return the outline from the outline agent",
-            "When the user asks for a story, only return the full short story after the appropriate team members have completed their job."
+            "use outline agent to generate outline",
+            "use writer agent to produce story from outline",
+            "return the final story of the writer agent",
+            "dont use any icons or emojies"
         ],
         tools = [],
         db = db,
