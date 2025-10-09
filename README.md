@@ -172,25 +172,6 @@ print(os.run('Write a story about time travel'))
 ```
 
 ## Observability & Analytics
-
-### View Token Usage & Costs
-
-**Real-time Cost Analysis**:
-```bash
-python analyze_costs.py
-```
-
-Output includes:
-- Total token consumption (input/output)
-- Cost breakdown by agent
-- Average cost per run
-- Recent usage history
-
-**Export Metrics**:
-```bash
-python export_metrics.py metrics_export.csv
-```
-
 ### Arize Phoenix Dashboard
 
 Access comprehensive tracing at `http://localhost:6006`:
@@ -221,9 +202,6 @@ knowledge        -- RAG knowledge base (future)
 ```
 no-bullshit-agno/
 ├── agents.py              # Main agent definitions and orchestration
-├── token_tracker.py       # Token usage tracking system
-├── analyze_costs.py       # Cost analysis CLI tool
-├── export_metrics.py      # Metrics export utility
 ├── database.db            # SQLite database
 ├── requirements.txt       # Python dependencies
 ├── .env                   # Environment configuration (create from .env.example)
