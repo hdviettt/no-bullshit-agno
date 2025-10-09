@@ -6,6 +6,7 @@ Version: 0.1.0
 Latest changes: 
 - Added sessions and memory management
 NOTES:
+- 
 
 TODO: 
 - RAG
@@ -132,7 +133,7 @@ def content_team():
         instructions=[
             "use outline agent to generate outline",
             "use writer agent to produce story from outline",
-            "return the final story of the writer agent",
+            "return ONLY the final story of the writer agent, DO NOT add extra words or explaining.",
             "dont use any icons or emojies"
         ],
         tools = [],
