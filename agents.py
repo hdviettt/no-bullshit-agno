@@ -42,16 +42,11 @@ import asyncio
 # tracing and evaluation
 from phoenix.otel import register
 
-# Token tracking
-from token_tracker import TokenTracker
 
 # Load environment variables
 import os
 import dotenv
 dotenv.load_dotenv()
-
-# Initialize token tracker
-tracker = TokenTracker()
 
 # Declare database
 
