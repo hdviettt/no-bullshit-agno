@@ -42,9 +42,6 @@ import asyncio
 # tracing and evaluation
 from phoenix.otel import register
 
-# Evaluation middleware for background monitoring
-from eval_middleware import patch_agno_methods
-
 # Load environment variables
 import os
 import dotenv
@@ -107,11 +104,6 @@ tracer_provider = register(
     auto_instrument=True,
 )
 
-# Enable background evaluation monitoring
-# This will automatically capture all agent runs
-print("[Setup] Enabling evaluation monitoring...")
-patch_agno_methods()
-print("[Setup] Evaluation monitoring enabled - all sessions will be auto-captured")
 """
 SEO CONTENT CREATION TEAM
 
@@ -168,6 +160,7 @@ def content_team():
         model = Claude(id="claude-sonnet-4-5-20250929", api_key=os.getenv("ANTHROPIC_API_KEY")),
         description="You are a short storywriter. Base on a given outline, you write a short compelling story.",
         instructions=[
+            "Story must be under 500 words."
             "When asked to write a story, only return the story itself and nothing else.",
             "Never use emojis or icons."
         ],
@@ -186,16 +179,45 @@ def content_team():
         cache_session=True
     )
 
+    content_evaluator = Agent(
+        name = "Content Evaluator Agent",
+        role = """
+            Evaluate a given story produced by a writer based on given criteria:
+            - Story must be under 500 words.
+            - Story must have the ending tied to the opening.
+            - Story must mention "Author: Viet" by the start of it.
+            """,
+        model = Claude(id="claude-sonnet-4-5-20250929", api_key=os.getenv("ANTHROPIC_API_KEY")),
+        description="You are a story reviewer. Base on a given story, you either approve or provide feedback",
+        instructions = [
+            "if the story is okay, only return 'approved'",
+            "if the story hasn't met the criteria, provide a short feedback checklist, each item clearly explaining what needs to be adjusted.",
+            "dont use any icons or emojies"
+        ],
+        db = db,
+        add_history_to_context=True, ## retrieve conversation history -> memory
+        read_chat_history=True, ## enables agent to read the chat history that were previously stored
+        # enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
+        num_history_runs=2,
+        search_session_history=True, ## allow searching through past sessions
+        # num_history_sessions=2, ## retrieve only the 2 lastest sessions of the agent
+        markdown=True,
+        debug_mode=True,
+        cache_session=True
+    )
+
     content_team = Team(
         name="AI SEO Content Team",
-        role="Coordinate the team members",
+        role="Coordinate the team members to create a short story. Don't explain, don't say anything until the final story is procuded.",
         model = Claude(id="claude-sonnet-4-5-20250929", api_key=os.getenv("ANTHROPIC_API_KEY")),
         description="",
         instructions=[
             "use outline agent to generate outline",
             "use writer agent to produce story from outline",
-            "return ONLY the final story of the writer agent, DO NOT add extra words or explaining.",
-            "dont use any icons or emojies"
+            "use evaluator agent to review and approve the story",
+            "if the evaluator agent provides a feedback, use that feedback to tell the content writer agent to rewrite",
+            "if the evalutor agent approves the story, return that story to the user."
+            "return ONLY the final story, DO NOT add extra words or explaining.",
         ],
         tools = [],
         db = db,
@@ -214,7 +236,7 @@ def content_team():
         cache_session=True,
 
 
-        members=[outline_agent, content_writer], 
+        members=[outline_agent, content_writer, content_evaluator], 
         # reasoning=True,
         # reasoning_max_steps = 2,
     )
