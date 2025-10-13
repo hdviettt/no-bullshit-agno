@@ -42,6 +42,8 @@ import asyncio
 # tracing and evaluation
 from phoenix.otel import register
 
+# Evaluation middleware for background monitoring
+from eval_middleware import patch_agno_methods
 
 # Load environment variables
 import os
@@ -104,6 +106,12 @@ tracer_provider = register(
     project_name="writer",
     auto_instrument=True,
 )
+
+# Enable background evaluation monitoring
+# This will automatically capture all agent runs
+print("[Setup] Enabling evaluation monitoring...")
+patch_agno_methods()
+print("[Setup] Evaluation monitoring enabled - all sessions will be auto-captured")
 """
 SEO CONTENT CREATION TEAM
 
