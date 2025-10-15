@@ -5,6 +5,7 @@ Description: AI Agentic System for SEO content creation with Agno.
 Version: 0.1.0
 Latest changes: 
 - connected to Arize Phoenix for tracing and evaluation.
+- migrated to a different repo
 NOTES:
 - not being able to trace total token usage and costs due to agno itself.
 
