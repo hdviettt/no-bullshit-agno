@@ -145,7 +145,7 @@ def content_team():
         search_session_history=True, ## allow searching through past sessions
         # num_history_sessions=2, ## retrieve only the 2 lastest sessions of the agent
         markdown=True,
-        debug_mode=True,
+        debug_mode=False,  # Hide intermediate output - only team sees this
         cache_session=True
     )
 
@@ -174,7 +174,7 @@ def content_team():
         search_session_history=True, ## allow searching through past sessions
         # num_history_sessions=2, ## retrieve only the 2 lastest sessions of the agent
         markdown=True,
-        debug_mode=True,
+        debug_mode=False,  # Hide intermediate output - only team sees this
         cache_session=True
     )
 
@@ -207,7 +207,7 @@ def content_team():
         num_history_runs=2,
         search_session_history=True,
         markdown=True,
-        debug_mode=True,
+        debug_mode=False,  # Hide intermediate output - only team sees this
         cache_session=True
     )
 
