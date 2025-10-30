@@ -7,6 +7,7 @@ openai>=1.60.0
 
 # Tools
 duckduckgo-search==8.1.1
+ddgs
 
 # MCP support
 mcp==1.16.0
