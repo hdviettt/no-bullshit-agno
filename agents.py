@@ -20,6 +20,7 @@ from agno.os import AgentOS
 
 # Model
 from agno.models.anthropic import Claude
+from agno.models.xai import xAI
 
 # SQLite Database
 from agno.db.sqlite import SqliteDb
@@ -95,15 +96,7 @@ db = SqliteDb(
 #     )
 # )
 
-# TRACING & EVALUATION
-os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = "http://localhost:6006"
-os.environ["PHOENIX_PROJECT_NAME"] = "writer"
 
-# Register Phoenix with enhanced configuration
-tracer_provider = register(
-    project_name="writer",
-    auto_instrument=True,
-)
 
 """
 SEO CONTENT CREATION TEAM
@@ -114,27 +107,28 @@ Members:
 """
 def content_team():
     """Run AI Agent team."""
-    ## Declare MCP tools
+    ## Declare MCP tools - Only Freepik (Mapbox removed due to timeout)
     content_env = {
             **os.environ,
-            # 'FREEPIK_API_KEY': os.getenv('FREEPIK_API_KEY'),
-            # 'DATAFORSEO_USERNAME': os.getenv('DATAFORSEO_USERNAME'),
-            # 'DATAFORSEO_PASSWORD': os.getenv('DATAFORSEO_PASSWORD'),
-            # 'BRAVE_API_KEY': os.getenv('BRAVE_API_KEY'),
-            "MAPBOX_ACCESS_TOKEN": os.getenv("MAPBOX_ACCESS_TOKEN")
+            'FREEPIK_API_KEY': os.getenv('FREEPIK_API_KEY'),
     }
 
     content_mcp_tools = MultiMCPTools(
         commands=[
-            "npx -y @mapbox/mcp-server",
+            f"npx -y mcp-remote https://api.freepik.com/mcp --header x-freepik-api-key:{os.getenv('FREEPIK_API_KEY')}",
         ],
-        env=content_env
+        env=content_env,
+        timeout_seconds=30,  # Increase timeout to 30 seconds
+        allow_partial_failure=True  # Allow agent to run even if Freepik connection fails
     )
 
     outline_agent = Agent(
         name = "Outline Agent",
         role = "Create a short story outline based on a given topic",
-        model = Claude(id="claude-sonnet-4-5-20250929", api_key=os.getenv("ANTHROPIC_API_KEY")),
+        model = xAI(
+        id="grok-4-0709",
+        api_key=os.getenv("XAI_API_KEY"),
+        ),
         description="You are short story idea creator. You generate an idea and suggest a clear outline base on a given topic",
         instructions = [
             "When asked to write a story, only return the story and nothing else.",
@@ -158,11 +152,15 @@ def content_team():
     content_writer = Agent(
         name = "Content Writer Agent",
         role = "Write story based on a given outline",
-        model = Claude(id="claude-sonnet-4-5-20250929", api_key=os.getenv("ANTHROPIC_API_KEY")),
+        model = xAI(
+        id="grok-4-0709",
+        api_key=os.getenv("XAI_API_KEY"),
+        ),
         description="You are a short storywriter. Base on a given outline, you write a short compelling story.",
         instructions=[
             "Story must be under 500 words."
-            "When asked to write a story, only return the story itself and nothing else.",
+            "When asked to write a story, only return the story text itself and nothing else.",
+            "DO NOT add images - another agent will handle that.",
             "Never use emojis or icons."
         ],
         tools = [],
@@ -180,45 +178,81 @@ def content_team():
         cache_session=True
     )
 
-    content_evaluator = Agent(
-        name = "Content Evaluator Agent",
-        role = """
-            Evaluate a given story produced by a writer based on given criteria:
-            - Story must be under 500 words.
-            - Story must have the ending tied to the opening.
-            - Story must mention "Author: Viet" by the start of it.
-            """,
-        model = Claude(id="claude-sonnet-4-5-20250929", api_key=os.getenv("ANTHROPIC_API_KEY")),
-        description="You are a story reviewer. Base on a given story, you either approve or provide feedback",
-        instructions = [
-            "if the story is okay, only return 'approved'",
-            "if the story hasn't met the criteria, provide a short feedback checklist, each item clearly explaining what needs to be adjusted.",
-            "dont use any icons or emojies"
+    image_integrator = Agent(
+        name = "Image Integration Agent",
+        role = "Insert relevant images into stories using Freepik",
+        model = xAI(
+        id="grok-4-0709",
+        api_key=os.getenv("XAI_API_KEY"),
+        ),
+        description="You are an image integration specialist. You analyze stories, identify key moments that need visual illustration, search for authentic real images using Freepik, and embed them into the story using markdown image syntax. You ONLY use real photography, never AI-generated images.",
+        instructions=[
+            "Analyze the story and identify 2-3 key moments or scenes that would benefit from images.",
+            "For each identified moment, use the search_resources tool from Freepik to find relevant, high-quality REAL images.",
+            "IMPORTANT: Search for authentic photographs and real images only. Avoid AI-generated content.",
+            "Use descriptive search terms that match the scene/moment in the story, adding keywords like 'photography', 'real', 'authentic' to prioritize real images.",
+            "Once you find potential images, use the detect_ai_image tool to verify they are NOT AI-generated.",
+            "If an image is detected as AI-generated, skip it and find an alternative real image.",
+            "Only use images that pass the AI detection check (confirmed as real/authentic).",
+            "After verification, use the download_resource_by_id tool to get the image URL.",
+            "Insert images into the story using markdown syntax: ![description](image_url)",
+            "Place images strategically - typically after the paragraph that describes the scene.",
+            "Return the complete story with all verified real images embedded in markdown format.",
+            "Never use emojis or icons."
         ],
+        tools = [content_mcp_tools],
         db = db,
-        add_history_to_context=True, ## retrieve conversation history -> memory
-        read_chat_history=True, ## enables agent to read the chat history that were previously stored
-        # enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
+        add_history_to_context=True,
+        read_chat_history=True,
         num_history_runs=2,
-        search_session_history=True, ## allow searching through past sessions
-        # num_history_sessions=2, ## retrieve only the 2 lastest sessions of the agent
+        search_session_history=True,
         markdown=True,
         debug_mode=True,
         cache_session=True
     )
 
+    # content_evaluator = Agent(
+    #     name = "Content Evaluator Agent",
+    #     role = """
+    #         Evaluate a given story produced by a writer based on given criteria:
+    #         - Story must be under 500 words.
+    #         - Story must have the ending tied to the opening.
+    #         - Story must mention "Author: Viet" by the start of it.
+    #         """,
+    #     model = Claude(id="claude-sonnet-4-5-20250929", api_key=os.getenv("ANTHROPIC_API_KEY")),
+    #     description="You are a story reviewer. Base on a given story, you either approve or provide feedback",
+    #     instructions = [
+    #         "if the story is okay, only return 'approved'",
+    #         "if the story hasn't met the criteria, provide a short feedback checklist, each item clearly explaining what needs to be adjusted.",
+    #         "dont use any icons or emojies"
+    #     ],
+    #     db = db,
+    #     add_history_to_context=True, ## retrieve conversation history -> memory
+    #     read_chat_history=True, ## enables agent to read the chat history that were previously stored
+    #     # enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
+    #     num_history_runs=2,
+    #     search_session_history=True, ## allow searching through past sessions
+    #     # num_history_sessions=2, ## retrieve only the 2 lastest sessions of the agent
+    #     markdown=True,
+    #     debug_mode=True,
+    #     cache_session=True
+    # )
+
     content_team = Team(
         name="AI SEO Content Team",
-        role="Coordinate the team members to create a short story. Don't explain, don't say anything until the final story is procuded.",
-        model = Claude(id="claude-sonnet-4-5-20250929", api_key=os.getenv("ANTHROPIC_API_KEY")),
-        description="",
+        role="Coordinate the team members to create a short story with images. Every story MUST include images.",
+        model = xAI(
+        id="grok-4-0709",
+        api_key=os.getenv("XAI_API_KEY"),
+        ),
+        description="You coordinate a team to create illustrated short stories. Every story must have images embedded.",
         instructions=[
-            "use outline agent to generate outline",
-            "use writer agent to produce story from outline",
-            "use evaluator agent to review and approve the story",
-            "if the evaluator agent provides a feedback, use that feedback to tell the content writer agent to rewrite",
-            "if the evalutor agent approves the story, return that story to the user."
-            "return ONLY the final story, DO NOT add extra words or explaining.",
+            "Step 1: Use outline agent to generate a story outline",
+            "Step 2: Use writer agent to produce the story text from the outline",
+            "Step 3: ALWAYS use image integration agent to add 2-3 relevant images to the story - this step is MANDATORY",
+            "Step 4: Verify that the final story has images embedded before returning it",
+            "Return ONLY the final story with images embedded in markdown format. DO NOT add extra words or explaining.",
+            "If the story doesn't have images, go back to step 3 and ensure the image integration agent adds them.",
         ],
         tools = [],
         db = db,
@@ -237,7 +271,7 @@ def content_team():
         cache_session=True,
 
 
-        members=[outline_agent, content_writer, content_evaluator], 
+        members=[outline_agent, content_writer, image_integrator],
         # reasoning=True,
         # reasoning_max_steps = 2,
     )
@@ -247,7 +281,7 @@ def content_team():
         description="My AgentOS",
         # agents=[assistant],
         teams=[content_team],
-        agents=[outline_agent, content_writer]
+        agents=[outline_agent, content_writer, image_integrator]
     )
 
     return agent_os
@@ -256,4 +290,13 @@ os_instance = content_team()
 app = os_instance.get_app()
 
 if __name__ == "__main__":
-    os_instance.serve(app="agents:app", reload=False)
+    # Get port from environment variable (Railway) or default to 7778
+    port = int(os.getenv("PORT", "7778"))
+    host = os.getenv("HOST", "0.0.0.0")  # Listen on all interfaces for Docker/Railway
+
+    os_instance.serve(
+        app="agents:app",
+        reload=False,
+        port=port,
+        host=host
+    )

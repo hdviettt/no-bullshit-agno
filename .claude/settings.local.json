@@ -7,7 +7,15 @@
       "Bash(git reset:*)",
       "Bash(git push:*)",
       "Bash(sed:*)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "Bash(python agents.py:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(timeout 3 cmd:*)",
+      "Bash(timeout 5 cmd:*)",
+      "mcp__agno__SearchAgno",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []
