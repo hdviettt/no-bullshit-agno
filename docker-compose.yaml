@@ -10,6 +10,5 @@ services:
       - XAI_API_KEY=${XAI_API_KEY}
       - FREEPIK_API_KEY=${FREEPIK_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-    volumes:
-      - ./database.db:/app/database.db
+      - SUPABASE_DB_URL=${SUPABASE_DB_URL}
     restart: unless-stopped

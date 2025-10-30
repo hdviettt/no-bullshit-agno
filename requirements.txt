@@ -15,6 +15,8 @@ mcp==1.16.0
 # Database
 aiosqlite==0.21.0
 sqlean.py==3.49.1
+psycopg2-binary==2.9.10
+sqlalchemy==2.0.36
 
 # Web server
 fastapi==0.118.2

@@ -22,8 +22,8 @@ from agno.os import AgentOS
 from agno.models.anthropic import Claude
 from agno.models.xai import xAI
 
-# SQLite Database
-from agno.db.sqlite import SqliteDb
+# PostgreSQL Database (Supabase)
+from agno.db.postgres import PostgresDb
 
 # RAG Chromadb Database
 # import chromadb
@@ -51,8 +51,8 @@ dotenv.load_dotenv()
 
 # Declare database
 
-db = SqliteDb(
-    db_file="database.db",
+db = PostgresDb(
+    db_url=os.getenv("SUPABASE_DB_URL"),
     # Table to store your Agent, Team and Workflow sessions and runs
     session_table="sessions",
     # Table to store all user memories
