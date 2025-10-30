@@ -289,6 +289,16 @@ def content_team():
 os_instance = content_team()
 app = os_instance.get_app()
 
+# Add CORS middleware to allow frontend to connect
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for now - you can restrict this later
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 if __name__ == "__main__":
     # Get port from environment variable (Railway) or default to 7778
     port = int(os.getenv("PORT", "7778"))
