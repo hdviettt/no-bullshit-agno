@@ -320,7 +320,7 @@ def lark_agent():
             f"npx -y @larksuiteoapi/lark-mcp mcp -a cli_a7e3876125b95010 -s bnR0sCHHILwnt15g8Lr0HgTIbk0ZVelI -d https://open.larksuite.com/ --oauth"
         ],
         # env=content_env,
-        timeout_seconds=30,  # Increase timeout to 30 seconds
+        timeout_seconds=60,  # Increase timeout to 30 seconds
         allow_partial_failure=True  # Allow agent to run even if Freepik connection fails
     )
 
