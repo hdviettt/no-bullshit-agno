@@ -392,7 +392,7 @@ def lark_agent():
         description="My AgentOS",
         # agents=[assistant],
         # teams=[content_team],
-        agents=[lark_agent]
+        agents=[lark_base_agent]
     )
 
     return agent_os
