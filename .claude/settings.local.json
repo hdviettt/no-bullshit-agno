@@ -15,7 +15,11 @@
       "Bash(timeout 3 cmd:*)",
       "Bash(timeout 5 cmd:*)",
       "mcp__agno__SearchAgno",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:no-bullshit-agno-production.up.railway.app)",
+      "Read(//c/Users/User/Desktop/agent-ui/**)",
+      "WebFetch(domain:agno-ui-production.up.railway.app)",
+      "Bash(pip install:*)"
     ],
     "deny": [],
     "ask": []

@@ -284,6 +284,120 @@ def content_team():
 
     return agent_os
 
+
+"""
+LARK TASK AGENT
+"""
+"""
+"lark-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@larksuiteoapi/lark-mcp",
+        "mcp",
+        "-a",
+        "cli_a7e3876125b95010",
+        "-s",
+        "bnR0sCHHILwnt15g8Lr0HgTIbk0ZVelI",
+        "-d",
+        "https://open.larksuite.com/",
+        "--oauth"
+      ]
+    },
+
+"""
+def lark_agent():
+    """Run AI Agent team."""
+    ## Declare MCP tools - Only Freepik (Mapbox removed due to timeout)
+    content_env = {
+            **os.environ,
+            'FREEPIK_API_KEY': os.getenv('FREEPIK_API_KEY'),
+    }
+
+    lark_mcp = MultiMCPTools(
+        commands=[
+            # f"npx -y mcp-remote https://api.freepik.com/mcp --header x-freepik-api-key:{os.getenv('FREEPIK_API_KEY')}",
+            f"npx -y @larksuiteoapi/lark-mcp mcp -a cli_a7e3876125b95010 -s bnR0sCHHILwnt15g8Lr0HgTIbk0ZVelI -d https://open.larksuite.com/ --oauth"
+        ],
+        # env=content_env,
+        timeout_seconds=30,  # Increase timeout to 30 seconds
+        allow_partial_failure=True  # Allow agent to run even if Freepik connection fails
+    )
+
+    lark_base_agent = Agent(
+        name = "Lark Task Management Agent",
+        role = "Manage Lark Tasks within a Lark Base using Lark MCP",
+        model = xAI(
+        id="grok-4-0709",
+        api_key=os.getenv("XAI_API_KEY"),
+        ),
+        description="You are a task management assistant that helps users manage their tasks in Lark Base using Lark MCP. You can create, update, delete, and retrieve tasks based on user requests.",
+        instructions=[
+            "Use the Lark MCP tool to interact with Lark Base. The specific base id is 'Q9gVbS1j1anjh7sP56Dln1xFgdG'.",
+            "When creating or updating tasks, ensure to include all necessary fields such as title, description, due date, and status.",
+            "Always confirm actions with the user before making changes to their tasks.",
+            "Provide clear and concise responses to the user regarding their task management requests."
+        ],
+        tools = [lark_mcp],
+        db = db,
+        add_history_to_context=True,
+        read_chat_history=True,
+        num_history_runs=2,
+        search_session_history=True,
+        markdown=True,
+        debug_mode=False,  # Hide intermediate output - only team sees this
+        cache_session=True
+    )
+
+    # content_team = Team(
+    #     name="AI SEO Content Team",
+    #     role="Coordinate the team members to create a short story with images. Every story MUST include images.",
+    #     model = xAI(
+    #     id="grok-4-0709",
+    #     api_key=os.getenv("XAI_API_KEY"),
+    #     ),
+    #     description="You coordinate a team to create illustrated short stories. Every story must have images embedded.",
+    #     instructions=[
+    #         "Step 1: Use outline agent to generate a story outline",
+    #         "Step 2: Use writer agent to produce the story text from the outline",
+    #         "Step 3: ALWAYS use image integration agent to add 2-3 relevant images to the story - this step is MANDATORY",
+    #         "Step 4: Verify that the final story has images embedded before returning it",
+    #         "Return ONLY the final story with images embedded in markdown format. DO NOT add extra words or explaining.",
+    #         "If the story doesn't have images, go back to step 3 and ensure the image integration agent adds them.",
+    #     ],
+    #     tools = [],
+    #     db = db,
+    #     # knowledge = knowledge,
+
+    #     add_history_to_context=True, ## retrieve conversaion history -> memory
+    #     read_team_history=True,
+    #     # enable_session_summaries=True, ## summarizes the content of a long conversaion to storage
+    #     num_history_runs=2,
+    #     search_session_history=True, ## allow searching through past sessions
+
+
+    #     # num_history_sessions=2, ## retrieve only the 2 lastest sessions of the agent
+    #     markdown=True,
+    #     debug_mode=True,
+    #     cache_session=True,
+
+
+    #     members=[outline_agent, content_writer, image_integrator],
+    #     # reasoning=True,
+    #     # reasoning_max_steps = 2,
+    # )
+
+    agent_os = AgentOS(
+        id="my os",
+        description="My AgentOS",
+        # agents=[assistant],
+        # teams=[content_team],
+        agents=[lark_agent]
+    )
+
+    return agent_os
+
+
 os_instance = content_team()
 app = os_instance.get_app()
 
